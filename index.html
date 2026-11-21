@@ -285,6 +285,17 @@
       line-height: 1.6;
     }
 
+    .filter-notice {
+      margin: 12px 0 0;
+      padding: 11px 13px;
+      border: 1px solid var(--color-border);
+      border-radius: 9px;
+      background: var(--color-surface-soft);
+      color: var(--color-text);
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+
     .app-footer {
       display: flex;
       justify-content: space-between;
@@ -418,6 +429,7 @@
 
     <!-- 清單為空時顯示的提示 -->
     <p id="empty-state" class="empty-state" hidden>還沒有任何待辦事項,新增一個吧!</p>
+    <p id="filter-notice" class="filter-notice" role="status" aria-live="polite" hidden></p>
 
     <footer class="app-footer">
       <span id="remaining-count" aria-live="polite">未完成:0 項</span>
@@ -430,6 +442,7 @@
     const input = document.getElementById('todo-input');
     const list = document.getElementById('todo-list');
     const emptyState = document.getElementById('empty-state');
+    const filterNotice = document.getElementById('filter-notice');
     const remainingCount = document.getElementById('remaining-count');
     const filterButtons = document.querySelectorAll('.btn-filter');
     const themeToggle = document.getElementById('theme-toggle');
@@ -438,6 +451,7 @@
 
     let todos = [];
     let currentFilter = 'all';
+    let filterNoticeText = '';
 
     // 套用主題並更新切換按鈕的圖示、文字與狀態。
     function applyTheme(theme) {
@@ -471,10 +485,10 @@
         return '還沒有任何待辦事項,新增一個吧!';
       }
       if (currentFilter === 'active') {
-        return '太棒了，沒有未完成的事項！';
+        return '目前沒有符合「未完成」篩選的事項；已完成的項目仍保留在清單中。切換至「全部」可查看。';
       }
       if (currentFilter === 'completed') {
-        return '還沒有已完成的事項。';
+        return '目前沒有符合「已完成」篩選的事項；不符合條件的項目只是被隱藏，並未刪除。切換至「全部」可查看。';
       }
       return '還沒有任何待辦事項,新增一個吧!';
     }
@@ -510,12 +524,15 @@
 
       emptyState.textContent = getEmptyMessage();
       emptyState.hidden = visibleTodos.length > 0;
+      filterNotice.textContent = filterNoticeText;
+      filterNotice.hidden = !filterNoticeText;
       remainingCount.textContent = `未完成:${todos.filter((todo) => !todo.completed).length} 項`;
     }
 
     // 切換目前的篩選條件並更新按鈕狀態。
     function setFilter(filter) {
       currentFilter = filter;
+      filterNoticeText = '';
 
       filterButtons.forEach((button) => {
         const isActive = button.dataset.filter === filter;
@@ -546,6 +563,7 @@
         completed: false,
       });
 
+      filterNoticeText = '';
       render();
       input.value = '';
       input.focus();
@@ -567,6 +585,9 @@
       }
 
       todo.completed = event.target.checked;
+      filterNoticeText = currentFilter === 'completed' && !todo.completed
+        ? `「${todo.text}」已取消完成，僅因不符合「已完成」篩選而隱藏，並未刪除；切換至「全部」即可查看。`
+        : '';
       render();
     });
 
@@ -581,6 +602,7 @@
       }
 
       todos = todos.filter((todo) => todo.id !== item.dataset.id);
+      filterNoticeText = '';
       render();
     });
 
